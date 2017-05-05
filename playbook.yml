@@ -146,11 +146,6 @@
       state: present
       key: "{{ lookup('file', '/tmp/controller.pub') }}"
 
-  # - name: obtain ssl certificate via letsencrypt
-  #   command: letsencrypt certonly --agree-tos -m {{ email }} --webroot --webroot-path /var/www/letsencrypt -d {{ domain }}
-  #   args:
-  #     creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem
-
   # - name: Creates weekly cert renew check cronjob
   #   cron:
   #     minute: "20"
@@ -160,9 +155,6 @@
   #     cron_file: "letsencrypt-RenewCert"
   #     user: "root"
   #     job: "letsencrypt renew"
-
-
-  # ANSIBLE_HOST_KEY_CHECKING=False
 
   handlers:
   - name: restart nginx
