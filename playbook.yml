@@ -60,16 +60,10 @@
       path: /var/www/letsencrypt
       state: directory
 
-  - name: copy ansible playbook to initialize the proxies without ssl
+  - name: copy 'stage-2' playbook to control the proxies
     template:
-      src: controller-files/playbook_lb_initial.yml.j2
-      dest: ~/playbook_lb_initial.yml
-      mode: 0640
-
-  - name: copy ansible playbook for full configuration with ssl
-    template:
-      src: controller-files/playbook_lb_with_ssl.yml.j2
-      dest: ~/playbook_lb_with_ssl.yml
+      src: controller-files/playbook_lb.yml.j2
+      dest: ~/playbook_lb.yml
       mode: 0640
 
   - name: copy scripts to controller
@@ -99,7 +93,7 @@
     notify:
       - restart nginx
 
-  - name: delete nginx default config 2
+  - name: delete nginx default config - part 2
     file:
       path: /etc/nginx/sites-enabled/default
       state: absent

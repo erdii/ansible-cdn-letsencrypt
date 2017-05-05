@@ -59,7 +59,12 @@
     notify:
       - restart nginx
 
-  - name: copy ssl certificate
+  - name: check if we already have a certificate from letsencrypt
+    local_action: stat path=/etc/letsencrypt/live/{{ domain }}/privkey.pem
+    register: lecert
+    ignore_errors: True
+
+  - name: if yes copy ssl certificate
     copy:
       src: "{{ '{{' }} item {{ '}}' }}"
       dest: /etc/ssl/{{ domain }}/{{ '{{' }} item | basename {{ '}}' }}
@@ -68,6 +73,21 @@
       - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
     notify:
       - restart nginx
+    when: lecert.stat.exists
+
+  - name: or create a self signed certificate
+    local_action: command openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${domain}" -days 3650 -keyout /tmp/privkey.pem -out /tmp/fullchain.pem -extensions v3_ca creates=/tmp/privkey.pem
+    run_once: true
+    when: lecert.stat.exists == False
+  
+  - name: and copy the self-signed certificate
+    copy:
+      src: "{{ '{{' }} item {{ '}}' }}"
+      dest: /etc/ssl/{{ domain }}/{{ '{{' }} item | basename {{ '}}' }}
+    with_items:
+      - /tmp/privkey.pem
+      - /tmp/fullchain.pem
+    when: lecert.stat.exists == False
 
   - name: copy ssl nginx configuration
     template:
@@ -75,6 +95,20 @@
       dest: /etc/nginx/conf.d/with_ssl.conf
       owner: root
       mode: 0600
+    notify:
+      - restart nginx
+
+  - name: delete nginx default config
+    file:
+      path: /etc/nginx/conf.d/default
+      state: absent
+    notify:
+      - restart nginx
+
+  - name: delete nginx default config - part 2
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
     notify:
       - restart nginx
 
