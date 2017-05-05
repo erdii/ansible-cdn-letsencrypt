@@ -53,3 +53,10 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
 
 * *adding new proxies*: this is currently **untested**:
     * theoretically updating the `inventory` file, re-deploying the 'stage-2' playbook and executing `./update_proxies` on the controller should work
+
+
+## Disclaimer
+
+```
+I am not responsible for damages to your soft- or hardware or bugs eating your cat that occur through usage of this code or part of it.
+```
