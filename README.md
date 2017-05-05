@@ -8,7 +8,7 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
 * one blank controller server
 * some blank proxy servers
 * a domain pointing to your controller server eg. `ctrl.example.com`
-* a domain pointing to your distribution eg. `www.example.com` `TODO: multiple domains - at least apex`
+* a domain pointing to your distribution eg. `www.example.com`
 
 * an `inventory` file with content like this:
     ```
@@ -54,6 +54,15 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
 * *adding new proxies*: this is currently **untested**:
     * theoretically updating the `inventory` file, re-deploying the 'stage-2' playbook and executing `./update_proxies` on the controller should work
 
+
+## Todo
+
+* handle multiple domains (nginx config and letsencrypt)
+* automate ssh trust on first use (notebook/controller -> proxies)
+* automated tests?
+* test adding another proxy after the initial setup
+* i think letsencrypt allows serving the challenge over https with a self signed certificate.
+    if this is true, we can remove `playbook_lb_initial.yml` and just deploy the production proxy configuration, just with a self signed ssl certificate.
 
 ## Disclaimer
 
