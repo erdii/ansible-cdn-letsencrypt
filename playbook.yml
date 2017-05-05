@@ -1,4 +1,13 @@
 ---
+- hosts: localhost
+  tasks:
+    - name: trust proxy host keys - if we havent already
+      local_action: shell ./trust_hosts.sh {{ item }} && touch ./trusted_hosts.lock
+      args:
+        creates: ./trusted_hosts.lock
+      with_items:
+        - "{{ groups['all'] | join(' ') }}"
+
 - hosts: controller
   user: root
   gather_facts: False
@@ -126,6 +135,13 @@
       dest: /tmp/controller.pub
       fail_on_missing: yes
       flat: yes
+
+  - name: trust proxy host keys
+    shell: "~/trust_hosts.sh {{ item }} && touch ~/.trusted_proxies.lock"
+    args:
+      creates: ~/.trusted_proxies.lock
+    with_items:
+      - "{{ groups['proxies'] | join(' ') }}"
 
   handlers:
   - name: restart nginx
