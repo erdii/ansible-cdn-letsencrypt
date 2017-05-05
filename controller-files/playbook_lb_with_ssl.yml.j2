@@ -1,0 +1,91 @@
+---
+- hosts: proxies
+  user: root
+  gather_facts: False
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+
+- hosts: proxies
+  user: root
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+  vars:
+    domain: {{ domain }}
+    ctrl_fqdn: {{ ctrl_fqdn }}
+    worker_user: {{ worker_user }}
+
+  tasks:
+  - name: update packages
+    apt:
+      update_cache: yes
+
+  - name: install nginx
+    apt:
+      name: nginx
+      state: latest
+
+  - name: create www folder
+    file:
+      mode: 0750
+      group: "{{ worker_user }}"
+      path: /var/www
+      state: directory
+
+  - name: create certificate folder
+    file:
+      mode: 0700
+      owner: root
+      path: /etc/ssl/{{ domain }}
+      state: directory
+
+  - name: delete initial nginx configuration
+    file:
+      path: /etc/nginx/conf.d/without_ssl.conf
+      state: absent
+    notify:
+      - restart nginx
+
+  - name: generate a safe dh prime
+    command: openssl dhparam 2048 -out /etc/ssl/dh2048.pem
+    args:
+      creates: /etc/ssl/dh2048.pem
+    notify:
+      - restart nginx
+
+  - name: copy ssl certificate
+    copy:
+      src: "{{ '{{' }} item {{ '}}' }}"
+      dest: /etc/ssl/{{ domain }}/{{ '{{' }} item | basename {{ '}}' }}
+    with_items:
+      - /etc/letsencrypt/live/{{ domain }}/privkey.pem
+      - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+    notify:
+      - restart nginx
+
+  - name: copy ssl nginx configuration
+    template:
+      src: proxy-files/nginx/conf.d/with_ssl.conf.j2
+      dest: /etc/nginx/conf.d/with_ssl.conf
+      owner: root
+      mode: 0600
+    notify:
+      - restart nginx
+
+  - name: enable and start nginx service
+    service:
+      name: nginx
+      state: restarted
+      enabled: yes
+
+  handlers:
+  - name: restart nginx
+    service:
+      name: nginx
+      state: reloaded

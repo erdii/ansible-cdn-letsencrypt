@@ -1,0 +1,4 @@
+#!/bin/sh
+ansible-playbook -i inventory playbook_lb_initial.yml && \
+    letsencrypt certonly --agree-tos -m {{ email }} --webroot --webroot-path /var/www/letsencrypt -d {{ domain }} --staging && \
+    ansible-playbook -i inventory playbook_lb_with_ssl.yml

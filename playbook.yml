@@ -1,0 +1,171 @@
+---
+- hosts: controller
+  user: root
+  gather_facts: False
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+- hosts: proxies
+  user: root
+  gather_facts: False
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+
+- hosts: controller
+  user: root
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+  vars:
+    domain: www.test.werise.de
+    ctrl_fqdn: ctrl.test.werise.de
+    email: erdiicodes@gmail.com
+    worker_user: www-data
+
+  tasks:
+  - name: update packages
+    apt:
+      update_cache: yes
+
+  - name: install nginx
+    apt:
+      name: nginx
+      state: latest
+
+  - name: install ansible
+    apt:
+      name: ansible
+      state: latest
+
+  - name: install letsencrypt
+    apt:
+      name: letsencrypt # certbot?
+      state: latest
+
+  - name: create letsencrypt www folder
+    file:
+      mode: 0750
+      group: "{{ worker_user }}"
+      path: /var/www/letsencrypt
+      state: directory
+
+  - name: copy ansible playbook to initialize the proxies without ssl
+    template:
+      src: controller-files/playbook_lb_initial.yml.j2
+      dest: ~/playbook_lb_initial.yml
+      mode: 0640
+
+  - name: copy ansible playbook for full configuration with ssl
+    template:
+      src: controller-files/playbook_lb_with_ssl.yml.j2
+      dest: ~/playbook_lb_with_ssl.yml
+      mode: 0640
+
+  - name: copy scripts to controller
+    template:
+      src: "{{ item }}"
+      dest: ~/{{ item | basename | regex_replace('\.j2','') }}
+      mode: 0740
+    with_fileglob:
+      - controller-files/*.sh.j2
+
+  - name: sync client files to controller
+    synchronize:
+      src: proxy-files
+      dest: "~"
+      recursive: yes
+
+  - name: copy inventory file
+    copy:
+      src: inventory
+      dest: ~/inventory
+      mode: 0640
+
+  - name: delete nginx default config
+    file:
+      path: /etc/nginx/conf.d/default
+      state: absent
+    notify:
+      - restart nginx
+
+  - name: delete nginx default config 2
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+    notify:
+      - restart nginx
+
+  - name: copy nginx letsencrypt configuration
+    template:
+      src: controller-files/nginx/conf.d/letsencrypt.conf.j2
+      dest: /etc/nginx/conf.d/letsencrypt.conf
+      owner: root
+      mode: 0600
+    notify:
+      - restart nginx
+
+  - name: enable and start nginx service
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+  - name: Generate SSH keys
+    shell: ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ""
+    args:
+      creates: ~/.ssh/id_rsa
+
+  - name: get controller pubkey
+    fetch:
+      src: ~/.ssh/id_rsa.pub
+      dest: /tmp/controller.pub
+      fail_on_missing: yes
+      flat: yes
+
+- hosts: proxies
+  user: root
+  # become: yes
+  # become_method: sudo
+  # become_user: root
+
+  tasks:
+  - name: add controller.pub to authorized_keys
+    authorized_key:
+      user: root
+      state: present
+      key: "{{ lookup('file', '/tmp/controller.pub') }}"
+
+  # - name: obtain ssl certificate via letsencrypt
+  #   command: letsencrypt certonly --agree-tos -m {{ email }} --webroot --webroot-path /var/www/letsencrypt -d {{ domain }}
+  #   args:
+  #     creates: /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+
+  # - name: Creates weekly cert renew check cronjob
+  #   cron:
+  #     minute: "20"
+  #     hour: "5"
+  #     weekday: "sun"
+  #     name: "renew certificates"
+  #     cron_file: "letsencrypt-RenewCert"
+  #     user: "root"
+  #     job: "letsencrypt renew"
+
+
+  # ANSIBLE_HOST_KEY_CHECKING=False
+
+  handlers:
+  - name: restart nginx
+    service:
+      name: nginx
+      state: reloaded
