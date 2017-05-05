@@ -28,9 +28,9 @@
   # become_method: sudo
   # become_user: root
   vars:
-    domain: www.test.werise.de
-    ctrl_fqdn: ctrl.test.werise.de
-    email: erdiicodes@gmail.com
+    domain: www.example.com
+    ctrl_fqdn: ctrl.example.com
+    email: webmaster@example.com
     worker_user: www-data
 
   tasks:
@@ -132,6 +132,13 @@
       dest: /tmp/controller.pub
       fail_on_missing: yes
       flat: yes
+
+  handlers:
+  - name: restart nginx
+    service:
+      name: nginx
+      state: reloaded
+
 
 - hosts: proxies
   user: root

@@ -42,8 +42,11 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
 ## Caveats
 
 * *ssh hostkeys*: for now we dont automatically trust ssh host keys **workaround**:
-    * ssh into all proxy servers from your mashine before starting
+    * ssh into all proxy servers from your mashine before startingt
     * ssh into all proxy server from the controller before running `./init_proxies.sh`
+    **or**
+    * run `./trust_hosts.sh x.x.x.x y.y.y.y z.z.z.z` from your machine before starting
+    * run `./trust_hosts.sh y.y.y.y z.z.z.z` from the controller before running `./init_proxies.sh`
 
 * *renewal cronjob*: for now we dont automatically renew the certificate **todo**:
     * automate certificate renewal with a cronjob
