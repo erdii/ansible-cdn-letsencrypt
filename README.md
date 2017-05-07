@@ -48,9 +48,6 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
     * run `./trust_hosts.sh y.y.y.y z.z.z.z` from your machine before starting
     * run `./trust_hosts.sh y.y.y.y z.z.z.z` from the controller before running `./init_proxies.sh`
 
-* *renewal cronjob*: for now we dont automatically renew the certificate **todo**:
-    * automate certificate renewal with a cronjob
-
 * *adding new proxies*: this is currently **untested**:
     * theoretically updating the `inventory` file, re-deploying the 'stage-2' playbook and executing `./update_proxies` on the controller should work
 
@@ -60,6 +57,7 @@ An Ansible playbook to set up a bunch of reverse proxies with a shared letsencry
 * handle multiple domains (nginx config and letsencrypt)
 * automated tests?
 * test adding another proxy after the initial setup
+* automate certificate renewal with a cronjob
 
 ## Disclaimer
 
