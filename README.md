@@ -2,6 +2,10 @@
 
 An Ansible playbook to set up a bunch of reverse proxies with a shared letsencrypt certificate
 
+-> EXPERIMENTAL
+
+This is mostly obsolete because the new ACMEv2 API supports DNS challenges, that make it a lot easier to get and distribute ssl certificates from let's encrypt
+
 ## Prerequisites
 
 * ansible on your local host
